@@ -3,10 +3,10 @@ icon (3.24.0, MIT). One color set reads on both GitHub themes (a mid gray, a tra
 frame), so each file is picked by width alone: GitHub turns a dark-scheme media query into
 one that always matches, which would also drop a width condition beside it.
 Two sets of the same links, each shown at one width and an empty 1 px file at the other:
-- desktop rail: the stack card floats right at 86% of the README column and these float
-  left, one per line beside it, so they stack; the first one's file has empty space above
-  it, which puts the stack at the card's vertical middle;
-- phone row: a centered paragraph under the card, so the row is centered at any width
+- side rail (README columns of 515 px or more): the stack card floats right at 86% of the
+  column and these float left, one per line beside it, so they stack; the first one's
+  file has empty space above it, which puts the stack at the card's vertical middle;
+- row (narrower columns): a centered paragraph under the card, so the row is centered at any width
   (the GitHub app included); each file has 10 units on each side, the gap between icons.
 Every visible file has 16 units above the icon: the gap between stacked icons on a desktop
 and between the card and the row on a phone.
@@ -18,11 +18,11 @@ SRC, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 T, ICON, GAP, SIDE = 32, 16, 16, 10
 COLOR, FRAME = "#8b949e", "rgba(139,148,158,.45)"  # 3.3:1 on white, 6.3:1 on #0d1117
 TILES = [("portfolio", "world"), ("email", "mail"), ("linkedin", "brand-linkedin")]
-# Desktop: GitHub's README column is 846 px, so the card is 0.86 x 846 x 490 / 900 = 396 px
-# tall and the stack 3 x 32 + 2 x 16 = 128 px: (396 - 128) / 2 = 134 above the first icon.
-# On a phone the empty rail files (1 px plus GitHub's 20 px beside a floated image) must fit
-# in the 14% left of the card: so the card is 86%, which leaves room from a 300 px column.
-LIFT = 134
+# Desktop: the card is 0.86 x column x 490 / 900 = 0.468 x column tall and the stack
+# 3 x 32 + 2 x 16 = 128 px, so the space above the first icon is (0.468 x column - 128) / 2.
+# The README's column moves with GitHub's layout, not only with the screen, so the README
+# picks one of these by the screen width that gives each band of columns (see README.md).
+LIFTS = {"566": 66, "650": 88, "745": 110, "818": 127, "846": 134}  # column it is set for: px
 
 
 def icon(src, delay, top=GAP, side=0):
@@ -50,5 +50,9 @@ for f in list(OUT.glob("link-*.svg")) + list(OUT.glob("blank-*.svg")):
 write("blank", '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"/>\n')
 for i, (role, src) in enumerate(TILES):
     delay = 2.0 + .12 * i
-    write(f"link-{role}-rail", icon(src, delay, top=LIFT if i == 0 else GAP))
+    if i == 0:
+        for col, lift in LIFTS.items():
+            write(f"link-{role}-rail{col}", icon(src, delay, top=lift))
+    else:
+        write(f"link-{role}-rail", icon(src, delay))
     write(f"link-{role}-row", icon(src, delay, side=SIDE))
