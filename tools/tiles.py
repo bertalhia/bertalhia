@@ -8,26 +8,28 @@ plain width query free for the first icon:
   empty space above it, which puts the stack at the card's vertical middle;
 - phone (max-width: 600px): no icon fits beside the card, so they line up under it; the
   first one's file has empty space on its left, which centers the row.
-Each file has 10 units under the icon: the gap between stacked icons.
+Each file has 16 units above the icon: the gap between stacked icons on a desktop, and
+between the staircase and the row on a phone.
 Usage: python3 tools/tiles.py tools/icons assets  (prints the names)"""
 import hashlib, re, sys
 from pathlib import Path
 
 SRC, OUT = Path(sys.argv[1]), Path(sys.argv[2])
-T, ICON, GAP = 32, 16, 10
+T, ICON, GAP = 32, 16, 16
 COLOR, FRAME = "#8b949e", "rgba(139,148,158,.45)"  # 3.3:1 on white, 6.3:1 on #0d1117
 TILES = [("portfolio", "world"), ("email", "mail"), ("linkedin", "brand-linkedin")]
 # Desktop: GitHub's README column is 846 px, so the card is 0.87 x 846 x 490 / 900 = 401 px
-# tall and the stack 3 x 32 + 2 x 10 = 116 px: (401 - 116) / 2 = 142 above the first icon.
+# tall and the stack 3 x 32 + 2 x 16 = 128 px: (401 - 128) / 2 = 137 above the first icon.
 # Phone: a 390 px screen leaves a 358 px column and the row is 3 x 32 + 2 x 20 (GitHub's
 # padding beside a floated image) = 136 px: (358 - 136) / 2 = 111 left of the first icon.
-LIFT, INDENT = 142, 111
+LIFT, INDENT = 137, 111
 
 
 def icon(src, delay, left=0, top=0):
     paths = re.findall(r'<path d="([^"]+)"', (SRC / f"{src}.svg").read_text())
     body = "".join(f'<path pathLength="1" d="{d}"/>' for d in paths)
-    w, h = left + T, top + T + GAP
+    top = top or GAP  # the desktop lift already holds the gap
+    w, h = left + T, top + T
     k, o = ICON / 24, (T - ICON) / 2
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
             f'<style>.t{{opacity:0;animation:t .5s ease-out {delay:.2f}s forwards}}'
