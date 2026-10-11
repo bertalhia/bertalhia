@@ -3,7 +3,7 @@ icon (3.24.0, MIT). One color set reads on both GitHub themes (a mid gray, a tra
 frame), so each file is picked by width alone: GitHub turns a dark-scheme media query into
 one that always matches, which would also drop a width condition beside it.
 Two sets of the same links, each shown at one width and an empty 1 px file at the other:
-- side rail (README columns of 515 px or more): the stack card floats right at 86% of the
+- side rail (wide README columns, see tools/readme.py): the stack card floats right at 86% of the
   column and these float left, one per line beside it, so they stack; the first one's
   file has empty space above it, which puts the stack at the card's vertical middle;
 - row (narrower columns): a centered paragraph under the card, so the row is centered at any width
@@ -18,11 +18,16 @@ SRC, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 T, ICON, GAP, SIDE = 32, 16, 16, 10
 COLOR, FRAME = "#8b949e", "rgba(139,148,158,.45)"  # 3.3:1 on white, 6.3:1 on #0d1117
 TILES = [("portfolio", "world"), ("email", "mail"), ("linkedin", "brand-linkedin")]
-# Desktop: the card is 0.86 x column x 490 / 900 = 0.468 x column tall and the stack
-# 3 x 32 + 2 x 16 = 128 px, so the space above the first icon is (0.468 x column - 128) / 2.
-# The README's column moves with GitHub's layout, not only with the screen, so the README
-# picks one of these by the screen width that gives each band of columns (see README.md).
-LIFTS = {"566": 66, "650": 88, "745": 110, "818": 127, "846": 134}  # column it is set for: px
+# The rail sits at the card's vertical middle: the card is 0.86 x 490 / 900 = 0.468 of the
+# column tall and the rail 3 x 32 + 2 x 16 = 128 px, so the first icon's file carries
+# (0.468 x column - 128) / 2 px above it. GitHub's column changes with the screen, so there
+# is one such file for each of these columns, 20 apart; tools/readme.py gives each file the
+# columns nearest to it, which keeps the rail within 3 px of the middle.
+RAIL_COLUMNS = [*range(545, 836, 20), 846]
+
+
+def lift(col):
+    return round((0.86 * col * 490 / 900 - 128) / 2)
 
 
 def icon(src, delay, top=GAP, side=0):
@@ -51,8 +56,8 @@ write("blank", '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" vie
 for i, (role, src) in enumerate(TILES):
     delay = 2.0 + .12 * i
     if i == 0:
-        for col, lift in LIFTS.items():
-            write(f"link-{role}-rail{col}", icon(src, delay, top=lift))
+        for col in RAIL_COLUMNS:
+            write(f"link-{role}-rail{col}", icon(src, delay, top=lift(col)))
     else:
         write(f"link-{role}-rail", icon(src, delay))
     write(f"link-{role}-row", icon(src, delay, side=SIDE))

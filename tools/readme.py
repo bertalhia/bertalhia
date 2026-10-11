@@ -1,32 +1,51 @@
-"""Writes README.md from the files in assets/. GitHub's profile column is the screen width
-less 82 px up to 767 px, less 370 px from 768 px (the profile sidebar comes in), less
-434 px from 1012 px, and 846 px from 1280 px (measured in Chrome on 2026-10-11). So the
-README picks each image by the screen widths that give each band of columns:
-- columns under 515 px (screens up to 596 px, and 768 to 884 px): a centered row of link
-  icons under the card, since no icon fits beside it there;
-- wider columns: the icons stacked beside the card, the first icon's space above it set for
-  the band of columns;
+"""Writes README.md from the files in assets/.
+GitHub's profile README column is not the screen width: it is the screen less 82 px up to
+767 px, less 370 px from 768 px (the profile sidebar comes in), less 434 px from 1012 px,
+and 846 px from 1280 px. Measured in Chrome on 2026-10-11, the same layout logged in and
+out. So the README picks each image by the screen widths that give each band of columns:
+- the link icons stack beside the card on columns of 535 px or more: they need 515 px
+  (the card's 86% and 20 px padding, plus 52 px for an icon and its padding), and 20 px
+  more covers a classic scrollbar, which narrows the column but not the media width;
+- on narrower columns a centered row of icons goes under the card instead, after a
+  <br clear="all"> (GitHub keeps clear), so the 1 px rail files, which float beside or
+  under the card there, never push it off center;
+- the first icon of the rail has the file set for the nearest column (tools/tiles.py);
 - the card is the stack as a tower on a phone screen (up to 596 px), which is tall and
   narrow, and the low staircase everywhere else, so the README fits a laptop screen.
 Usage: python3 tools/readme.py assets README.md"""
+import re
 import sys
 from pathlib import Path
 
 A, OUT = Path(sys.argv[1]), Path(sys.argv[2])
+SEGMENTS = [(0, 767, 82), (768, 1011, 370), (1012, 1279, 434)]  # first screen, last screen, screen less column
+FULL, RAIL_MIN, PHONE_MAX = 846, 535, 596
 
 
 def n(prefix):
     return next(f.name for f in A.glob(f"{prefix}-*.svg"))
 
 
-NARROW = "(max-width: 596px), (min-width: 768px) and (max-width: 884px)"
-PHONE = "(max-width: 596px)"
-RAIL_BANDS = [  # (media, first icon file) for each band of columns of 515 px or more
-    ("(min-width: 597px) and (max-width: 681px), (min-width: 885px) and (max-width: 969px), (min-width: 1012px) and (max-width: 1033px)", "rail566"),
-    ("(min-width: 682px) and (max-width: 767px), (min-width: 970px) and (max-width: 1011px), (min-width: 1034px) and (max-width: 1133px)", "rail650"),
-    ("(min-width: 1134px) and (max-width: 1223px)", "rail745"),
-    ("(min-width: 1224px) and (max-width: 1279px)", "rail818"),
-]
+def media(lo, hi):
+    """Screen widths whose column falls in lo..hi; .98 closes the gap of a fractional width."""
+    parts = []
+    for first, last, less in SEGMENTS:
+        a, b = max(lo + less, first), min(hi + less, last)
+        if a <= b:
+            parts.append(("" if a == 0 else f"(min-width: {a}px) and ") + f"(max-width: {b}.98px)")
+    return ", ".join(parts)
+
+
+NARROW = media(-FULL, RAIL_MIN - 1)
+PHONE = f"(max-width: {PHONE_MAX}.98px)"
+rails = sorted((int(m[1]), f.name) for f in A.glob("link-portfolio-rail*.svg") if (m := re.match(r"link-portfolio-rail(\d+)-", f.name)))
+RAIL_BANDS = []  # (media, file) for each rail column but the full one, which is the default
+for i, (col, name) in enumerate(rails[:-1]):
+    lo = RAIL_MIN if i == 0 else (rails[i - 1][0] + col) // 2 + 1
+    hi = (col + rails[i + 1][0]) // 2
+    RAIL_BANDS.append((media(lo, hi), name))
+assert rails[-1][0] == FULL
+
 TECHS = "PostgreSQL · Prisma · Drizzle · NestJS · tRPC · TypeScript · Next.js · React · Expo · SwiftUI · Docker · GitHub Actions · Cloudflare · AWS"
 ALT = ("My stack, from the database to the screen, on the platform that ships them: PostgreSQL, Prisma and Drizzle; "
        "NestJS, tRPC and TypeScript; Next.js, React, Expo and SwiftUI; on Docker, GitHub Actions, Cloudflare and AWS.")
@@ -44,19 +63,13 @@ card = (f'<a href="https://leandro.lejustudio.com">'
         + "</a>")
 rail = ""
 for i, (href, role, label) in enumerate(LINKS):
-    sources = [(NARROW, n("blank"))]
-    if i == 0:
-        sources += [(media, n(f"link-{role}-{band}")) for media, band in RAIL_BANDS]
-        default = n(f"link-{role}-rail846")
-    else:
-        default = n(f"link-{role}-rail")
+    sources = [(NARROW, n("blank"))] + (RAIL_BANDS if i == 0 else [])
+    default = rails[-1][1] if i == 0 else n(f"link-{role}-rail")
     rail += f'<a href="{href}">' + picture(sources, f'<img align="left" title="{label}" alt="{label}" src="./assets/{default}">') + "</a>"
 row = "".join(f'<a href="{href}">' + picture([(NARROW, n(f"link-{role}-row"))], f'<img title="{label}" alt="{label}" src="./assets/{n("blank")}">') + "</a>"
               for href, role, label in LINKS)
-OUT.write_text(f"""<!-- Generated by tools/readme.py, which explains the layout: the stack card floats right at 86% of the column, a tower on a phone and a staircase elsewhere; on columns of 515 px or more the link icons stack beside it, and on narrower ones a centered row under it shows them instead. Every image reads on both themes, so each is picked by width alone. The tags of each paragraph stay on one line: a space between them would take width beside the floats. -->
+OUT.write_text(f"""<!-- Generated by tools/readme.py, which explains the layout: the stack card floats right at 86% of the column, a tower on a phone and a staircase elsewhere; on wide columns the link icons stack beside it, and on narrower ones a centered row under it shows them instead; the row starts after a clearing line break, so no float beside or under the card can push it off center. Every image reads on both themes, so each is picked by width alone. The tags of each paragraph stay on one line: a space between them would take width beside the floats. -->
 
-<p>{card}{rail}</p>
-
-<p align="center">{row}</p>
+<p align="center">{card}{rail}<br clear="all">{row}</p>
 """)
 print(OUT)
