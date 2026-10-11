@@ -1,15 +1,16 @@
 """Profile README card, v3: an isometric staircase of the stack. The steps go from the
 database to the API to the screens, on the platform that ships them, each with the
 logos of its technologies standing on it. Blocks drop in, logos land and then float.
-Four files: desktop and phone, light and dark, named by content hash.
+Two files, light and dark, named by content hash. GitHub turns a dark-scheme media query
+into one that always matches, so no file can be picked by width.
 Usage: python3 tools/stairs.py tools/logos assets"""
 import hashlib, re, sys
 from pathlib import Path
 
 LOGOS_DIR, OUT = Path(sys.argv[1]), Path(sys.argv[2])
 C, S = 0.866, 0.5
-D, W_STEP, H_STEP = 100, 190, 34  # a long, low staircase: about 1.44 wide for 1 tall
-LOGO = 40  # canvas units; the phone card, drawn smaller, takes larger logos
+D, W_STEP, H_STEP = 96, 205, 30  # a long, low staircase: about 1.5 wide for 1 tall
+LOGO = 44  # canvas units
 BOX = [1e9, 1e9, -1e9, -1e9]  # extent of the tower, filled while drawing
 FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"
 MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
@@ -139,18 +140,16 @@ def style(c):
 def card(form, theme):
     c = THEMES[theme]
     defs = "".join(symbol(n, c) for n in NAMES)
-    global LOGO
-    if form == "desktop":
-        w, h, target, LOGO = 900, 592, (50, 18, 850, 574), 40
-    else:
-        w, h, target, LOGO = 440, 312, (30, 14, 440, 298), 45
+    # The card floats right of the link tiles at 87% of the README column, about 736 px of
+    # GitHub's 846: 900 x 490 shows about 400 px tall, so the README fits a laptop screen.
+    w, h, target = 900, 490, (4, 12, 876, 478)
     text = ""
     BOX[:] = [1e9, 1e9, -1e9, -1e9]
     drawn = tower(c, .35)
     bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
     tw, th = target[2] - target[0], target[3] - target[1]
     k = min(tw / bw, th / bh)
-    tx = target[0] + (tw - bw * k) / 2 - BOX[0] * k
+    tx = target[0] - BOX[0] * k  # left-aligned: the staircase starts next to the link tiles
     ty = target[1] + (th - bh * k) / 2 - BOX[1] * k
     place = f"translate({tx:.1f} {ty:.1f}) scale({k:.3f})"
     return f"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-labelledby="t">
@@ -166,9 +165,9 @@ def card(form, theme):
 OUT.mkdir(parents=True, exist_ok=True)
 for f in OUT.glob("*.svg"):
     f.unlink()
-for form in ("desktop", "phone"):
+for form in ("desktop",):
     for theme in THEMES:
         body = card(form, theme)
-        name = f"stack-{form}-{theme}-{hashlib.sha256(body.encode()).hexdigest()[:8]}.svg"
+        name = f"stack-{theme}-{hashlib.sha256(body.encode()).hexdigest()[:8]}.svg"
         (OUT / name).write_text(body)
         print(name)
