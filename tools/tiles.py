@@ -20,9 +20,11 @@ COLOR, FRAME = "#8b949e", "rgba(139,148,158,.45)"  # 3.3:1 on white, 6.3:1 on #0
 TILES = [("portfolio", "world"), ("email", "mail"), ("linkedin", "brand-linkedin")]
 # Desktop: GitHub's README column is 846 px, so the card is 0.87 x 846 x 490 / 900 = 401 px
 # tall and the stack 3 x 32 + 2 x 16 = 128 px: (401 - 128) / 2 = 137 above the first icon.
-# Phone: a 390 px screen leaves a 358 px column and the row is 3 x 32 + 2 x 20 (GitHub's
-# padding beside a floated image) = 136 px: (358 - 136) / 2 = 111 left of the first icon.
-LIFT, INDENT = 137, 111
+# Phone: GitHub's mobile web takes 82 px around the README (16 px page margins, the box
+# border and 24 px box padding on each side; measured at 500 px), so a 390 px screen leaves
+# a 308 px column, and the row is 3 x 32 + 2 x 20 (GitHub's padding beside a floated image)
+# = 136 px: (308 - 136) / 2 = 86 left of the first icon.
+LIFT, INDENT = 137, 86
 
 
 def icon(src, delay, left=0, top=0):

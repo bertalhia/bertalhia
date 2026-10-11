@@ -149,7 +149,10 @@ def card(form, theme):
     bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
     tw, th = target[2] - target[0], target[3] - target[1]
     k = min(tw / bw, th / bh)
-    tx = target[0] - BOX[0] * k  # left-aligned: the staircase starts next to the link tiles
+    # The card floats right at 87% of the column, so the column's middle falls at
+    # (0.5 - 0.13) / 0.87 = 42.5% of the card: the staircase is centered there, which keeps
+    # it in the middle of a phone and near the link icons on a desktop.
+    tx = .425 * w - (BOX[0] + bw / 2) * k
     ty = target[1] + (th - bh * k) / 2 - BOX[1] * k
     place = f"translate({tx:.1f} {ty:.1f}) scale({k:.3f})"
     return f"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-labelledby="t">
