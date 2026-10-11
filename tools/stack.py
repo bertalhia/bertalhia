@@ -7,8 +7,8 @@ into one that always matches and drops a width condition beside it.
 - desktop: a long staircase, which fits the wide README column and stays short;
 - phone (max-width: 600px): the same layers stacked into a tower, so the logos stay large
   on a narrow column.
-The card floats right at 87% of the README column, so the column's middle falls at
-(0.5 - 0.13) / 0.87 = 42.5% of the card: the drawing is centered there.
+The card floats right at 86% of the README column, so the column's middle falls at
+(0.5 - 0.14) / 0.86 = 41.9% of the card: the drawing is centered there.
 Usage: python3 tools/stack.py tools/logos assets  (prints the names)"""
 import hashlib, re, sys
 from pathlib import Path
@@ -18,6 +18,7 @@ C, S = 0.866, 0.5
 FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"
 MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace"
 # Clay: light, opaque grays that read on a white page and on GitHub's #0d1117 alike.
+MID = .419  # the column's middle, as a share of the card's width
 CLAY = dict(top="#eef1f3", front="#d6dce1", side="#c2cad1", edge="#a9b3bb", label="#59636e",
             mono="#1f2328", shadow="rgba(31,35,40,.2)", grid="#8b949e")
 TINT = {"database": "#4169E1", "api": "#E0234E", "screens": "#2ea8c8", "platform": "#8b949e"}
@@ -98,7 +99,7 @@ def staircase(t0):
     """Desktop: the steps climb to the back right, the platform under them."""
     D, W, H, size = 96, 205, 30, 44
     out = []
-    plate = block(-34, D + 74, -3 * W - 34, 46, -10, 0, "platform", top_line=False) + label("platform", D + 74, 46 - 14, -2.5)
+    plate = block(-34, D + 74, -3 * W - 34, 46, -24, 0, "platform", top_line=False) + label("platform", D + 74, 46 - 14, -18)
     out.append(f'<g class="rise" style="animation-delay:{t0:.2f}s">{plate}</g>')
     for k in reversed(range(len(LAYERS))):
         name, logos = LAYERS[k]
@@ -119,7 +120,7 @@ def tower(t0):
     over its front half, under the next layer, which floats high enough to leave them clear."""
     h, hp, thick, gap, size = 110, 118, 26, 128, 50
     out = []
-    plate = block(-hp, hp, -hp, hp, -12, 0, "platform", top_line=False) + label("platform", hp, hp - 14, -3)
+    plate = block(-hp, hp, -hp, hp, -24, 0, "platform", top_line=False) + label("platform", hp, hp - 14, -18)
     rows = [(PLATFORM[1], hp, 0)]
     out.append(f'<g class="rise" style="animation-delay:{t0:.2f}s">{plate}</g>')
     z = 0
@@ -166,11 +167,11 @@ def grid(w, h, cx, cy):
                 + '</pattern>')
     reach = .62 * max(w, h)  # the wave fades out about where the grid does
     return (f'<defs>{dots("dots", 1.1)}{dots("bright", 1.7)}'
-            f'<radialGradient id="fade" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/>'
-            f'<stop offset=".7" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+            f'<radialGradient id="fade" cx="41.9%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/>'
+            f'<stop offset=".55" stop-color="#fff" stop-opacity=".3"/><stop offset=".82" stop-color="#fff" stop-opacity="0"/></radialGradient>'
             f'<mask id="vignette" maskUnits="userSpaceOnUse" x="0" y="0" width="{w}" height="{h}"><rect width="{w}" height="{h}" fill="url(#fade)"/></mask>'
-            f'<radialGradient id="glowfade" cx="42.5%" cy="50%" r="55%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/>'
-            f'<stop offset=".75" stop-color="#fff" stop-opacity=".45"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>'
+            f'<radialGradient id="glowfade" cx="41.9%" cy="50%" r="50%"><stop offset="0" stop-color="#fff" stop-opacity=".9"/>'
+            f'<stop offset=".55" stop-color="#fff" stop-opacity=".45"/><stop offset=".82" stop-color="#fff" stop-opacity="0"/></radialGradient>'
             f'<mask id="glow" maskUnits="userSpaceOnUse" x="0" y="0" width="{w}" height="{h}"><rect width="{w}" height="{h}" fill="url(#glowfade)"/></mask>'
             f'<mask id="wave" maskUnits="userSpaceOnUse" x="0" y="0" width="{w}" height="{h}"><g transform="translate({cx:.1f} {cy:.1f})">'
             f'<circle class="ring" r="{reach:.0f}" fill="none" stroke="#fff" stroke-width="{reach * .14:.0f}"/></g></mask></defs>'
@@ -179,7 +180,7 @@ def grid(w, h, cx, cy):
             f'<style>.drift{{animation:drift 16s linear infinite}}@keyframes drift{{to{{transform:translate({pw}px,{ph}px)}}}}'
             f'.grid-in{{opacity:0;animation:in 1.2s ease-out forwards}}'
             f'.ring{{opacity:0;transform:scale(.04);animation:wave 7s linear 2.2s infinite}}'
-            f'@keyframes wave{{0%{{opacity:0;transform:scale(.04)}}8%{{opacity:1}}60%{{opacity:.7}}85%,100%{{opacity:0;transform:scale(1)}}}}</style>')
+            f'@keyframes wave{{0%{{opacity:0;transform:scale(.04)}}8%{{opacity:1}}45%{{opacity:.6}}75%{{opacity:0;transform:scale(.85)}}100%{{opacity:0;transform:scale(.85)}}}}</style>')
 
 
 STYLE = """<style>
@@ -198,22 +199,22 @@ def card(draw, w, h, pad):
     BOX[:] = [1e9, 1e9, -1e9, -1e9]
     drawn = draw(.35)
     bw, bh = BOX[2] - BOX[0], BOX[3] - BOX[1]
-    room = 2 * min(.425 * w, w - .425 * w) - 2 * pad  # widest drawing centered at 42.5%
+    room = 2 * min(MID * w, w - MID * w) - 2 * pad  # widest drawing centered at MID
     k = room / bw if h is None else min(room / bw, (h - 2 * pad) / bh)
     if h is None:  # the phone card is as tall as its drawing
         h = round(bh * k + 2 * pad)
-    tx = .425 * w - (BOX[0] + bw / 2) * k
+    tx = MID * w - (BOX[0] + bw / 2) * k
     ty = (h - bh * k) / 2 - BOX[1] * k
     defs = "".join(symbol(n) for n in [*sum((l for _, l in LAYERS), []), *PLATFORM[1]])
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-labelledby="t">'
-            f'<title id="t">{TITLE}</title>{STYLE}{grid(w, h, .425 * w, h / 2)}<defs>{defs}</defs>'
+            f'<title id="t">{TITLE}</title>{STYLE}{grid(w, h, MID * w, h / 2)}<defs>{defs}</defs>'
             f'<g transform="translate({tx:.1f} {ty:.1f}) scale({k:.3f})">{drawn}</g></svg>\n')
 
 
 OUT.mkdir(parents=True, exist_ok=True)
 for f in OUT.glob("stack-*.svg"):
     f.unlink()
-# desktop: 900 x 490 shows about 400 px tall at 87% of GitHub's 846 px column
+# desktop: 900 x 490 shows about 396 px tall at 86% of GitHub's 846 px column
 for form, draw, w, h, pad in (("desktop", staircase, 900, 490, 14), ("phone", tower, 440, None, 10)):
     body = card(draw, w, h, pad)
     name = f"stack-{form}-{hashlib.sha256(body.encode()).hexdigest()[:8]}.svg"
