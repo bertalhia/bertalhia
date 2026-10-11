@@ -4,8 +4,8 @@ frame), so each file is picked by width alone: GitHub turns a dark-scheme media 
 one that always matches, which would also drop a width condition beside it.
 Two sets of the same links, each shown at one width and an empty 1 px file at the other:
 - side rail (wide README columns, see tools/readme.py): the stack card floats right at 86% of the
-  column and these float left, one per line beside it, so they stack; the first one's
-  file has empty space above it, which puts the stack at the card's vertical middle;
+  column and these float left, one per line beside it, so they stack, under an empty file
+  that puts the stack at the card's vertical middle;
 - row (narrower columns): a centered paragraph under the card, so the row is centered at any width
   (the GitHub app included); each file has 10 units on each side, the gap between icons.
 Every visible file has 16 units above the icon: the gap between stacked icons on a desktop
@@ -19,10 +19,13 @@ T, ICON, GAP, SIDE = 32, 16, 16, 10
 COLOR, FRAME = "#8b949e", "rgba(139,148,158,.45)"  # 3.3:1 on white, 6.3:1 on #0d1117
 TILES = [("portfolio", "world"), ("email", "mail"), ("linkedin", "brand-linkedin")]
 # The rail sits at the card's vertical middle: the card is 0.86 x 490 / 900 = 0.468 of the
-# column tall and the rail 3 x 32 + 2 x 16 = 128 px, so the first icon's file carries
-# (0.468 x column - 128) / 2 px above it. GitHub's column changes with the screen, so there
-# is one such file for each of these columns, 20 apart; tools/readme.py gives each file the
-# columns nearest to it, which keeps the rail within 3 px of the middle.
+# column tall and the rail 3 x 32 + 2 x 16 = 128 px, so an empty file of the icon's width
+# floats above the first icon, (0.468 x column - 128) / 2 - 16 px tall; two of those widths
+# never fit beside the card, so the icon goes under it. GitHub's column changes with the
+# screen, so there is one such file for each of these columns, 20 apart; tools/readme.py
+# gives each file the columns nearest to it, which keeps the rail within 3 px of the middle.
+# The icons themselves stay the same files at every width: a new file would replay their
+# entrance when a window is resized.
 RAIL_COLUMNS = [*range(545, 836, 20), 846]
 
 
@@ -50,14 +53,13 @@ def write(prefix, svg):
     print(name)
 
 
-for f in list(OUT.glob("link-*.svg")) + list(OUT.glob("blank-*.svg")):
+for f in [*OUT.glob("link-*.svg"), *OUT.glob("blank-*.svg"), *OUT.glob("rail-space*.svg")]:
     f.unlink()
 write("blank", '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"/>\n')
+for col in RAIL_COLUMNS:
+    h = lift(col) - GAP
+    write(f"rail-space{col}", f'<svg xmlns="http://www.w3.org/2000/svg" width="{T}" height="{h}" viewBox="0 0 {T} {h}"/>\n')
 for i, (role, src) in enumerate(TILES):
     delay = 2.0 + .12 * i
-    if i == 0:
-        for col in RAIL_COLUMNS:
-            write(f"link-{role}-rail{col}", icon(src, delay, top=lift(col)))
-    else:
-        write(f"link-{role}-rail", icon(src, delay))
+    write(f"link-{role}-rail", icon(src, delay))
     write(f"link-{role}-row", icon(src, delay, side=SIDE))
